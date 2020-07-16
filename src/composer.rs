@@ -45,6 +45,7 @@ pub async fn run_composer(path: impl AsRef<Path>) -> Result<()> {
     info!("Running Composer at '{}'...", path.as_ref().display());
     let output = Command::new("composer")
         .arg("install")
+        .arg("--no-dev")
         .current_dir(&path)
         .output()
         .await?;
