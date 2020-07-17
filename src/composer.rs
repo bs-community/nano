@@ -1,4 +1,4 @@
-use futures::future::{join3, join_all, try_join_all};
+use futures::future::{try_join3, try_join_all};
 use serde::Deserialize;
 use serde_json::from_slice;
 use std::{
@@ -6,7 +6,7 @@ use std::{
     io::{Error, ErrorKind},
     path::{self, Path},
 };
-use tokio::{fs, io::Result, process::Command};
+use tokio::{fs, io::Result, process::Command, stream::StreamExt};
 
 #[derive(Deserialize)]
 struct ComposerLock {
@@ -80,7 +80,7 @@ async fn install_and_clean(lock: &ComposerPackages, path: impl AsRef<Path>) -> R
     dedupe(&lock, &path, &path_display, &composer_json).await
 }
 
-async fn dedupe<'a>(
+pub async fn dedupe<'a>(
     lock: &ComposerPackages,
     path: impl AsRef<Path>,
     display: &path::Display<'a>,
@@ -88,19 +88,33 @@ async fn dedupe<'a>(
 ) -> Result<()> {
     let local_lock = parse_lock(&path).await?;
     let vendor_path = format!("{}/vendor", display);
-    let deletions = lock
-        .intersection(&local_lock)
-        .map(|name| vendor_path.clone() + "/" + name)
-        .map(fs::remove_dir_all);
 
-    #[allow(unused_must_use)]
-    {
-        join3(
-            join_all(deletions),
-            fs::remove_file(manifest_path),
-            fs::remove_file(format!("{}/composer.lock", display)),
-        )
-        .await;
+    let deletion = async {
+        let deletions = lock
+            .intersection(&local_lock)
+            .map(|name| vendor_path.clone() + "/" + name)
+            .map(fs::remove_dir_all);
+        try_join_all(deletions).await?;
+
+        let mut dirs = fs::read_dir(&vendor_path).await?;
+        while let Some(dir) = dirs.next_entry().await? {
+            let path = dir.path();
+            let mut items = fs::read_dir(&path).await?;
+            if !items.any(|_| true).await {
+                fs::remove_dir(&path).await?;
+            }
+        }
+
+        Ok(())
+    };
+
+    let clean_up = try_join3(
+        deletion,
+        fs::remove_file(manifest_path),
+        fs::remove_file(format!("{}/composer.lock", display)),
+    );
+    if let Err(_) = clean_up.await {
+        warn!("Failed to clean up Composer stuff at '{}'", display);
     }
 
     Ok(())
