@@ -21,7 +21,11 @@ async fn yarn() -> Result<()> {
 async fn webpack() -> Result<()> {
     info!("Running webpack...");
 
-    let output = Command::new("yarn").arg("build").output().await?;
+    let output = Command::new("yarn")
+        .arg("build")
+        .env("NODE_ENV", "production")
+        .output()
+        .await?;
     let status = output.status;
     if !status.success() {
         let code = status.code().unwrap_or(-1);
