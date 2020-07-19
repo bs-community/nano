@@ -1,13 +1,76 @@
-use std::path::Path;
-use tokio::{fs, io};
+use crate::types;
+use std::{collections::HashMap, path::Path};
+use tokio::fs;
 use yaml_rust::{ScanError, YamlLoader};
 
-pub async fn trans(path: impl AsRef<Path>, key: &str, lang: &'static str) -> io::Result<String> {
+pub struct I18nStore {
+    store: HashMap<String, PluginInfo>,
+}
+
+#[derive(Clone)]
+pub struct PluginInfo {
+    pub title: Text,
+    pub description: Text,
+}
+
+#[derive(Clone)]
+pub struct Text {
+    pub en: String,
+    pub zh_cn: String,
+}
+
+impl I18nStore {
+    pub async fn create<S: AsRef<str>>(
+        root: impl AsRef<Path>,
+        plugins: impl Iterator<Item = S>,
+    ) -> I18nStore {
+        let root = root.as_ref().display();
+
+        let mut store = HashMap::new();
+
+        for plugin in plugins {
+            let plugin = plugin.as_ref();
+            let path = format!("{}/plugins/{}", root, plugin);
+            let package_json = match fs::read(format!("{}/package.json", path)).await {
+                Ok(bytes) => match serde_json::from_slice::<types::PackageJson>(&bytes) {
+                    Ok(manifest) => manifest,
+                    Err(_) => {
+                        warn!("Failed to parse 'package.json' of '{}'.", plugin);
+                        continue;
+                    }
+                },
+                Err(_) => {
+                    warn!("Failed to open file 'package.json' of '{}'.", plugin);
+                    continue;
+                }
+            };
+
+            let title = Text {
+                en: trans(&path, &package_json.title, "en").await,
+                zh_cn: trans(&path, &package_json.title, "zh_CN").await,
+            };
+            let description = Text {
+                en: trans(&path, &package_json.description, "en").await,
+                zh_cn: trans(&path, &package_json.description, "zh_CN").await,
+            };
+            let plugin_info = PluginInfo { title, description };
+            store.insert(plugin.to_string(), plugin_info);
+        }
+
+        I18nStore { store }
+    }
+
+    pub fn get(&self, plugin: &str) -> Option<&PluginInfo> {
+        self.store.get(plugin)
+    }
+}
+
+pub async fn trans(path: impl AsRef<Path>, key: &str, lang: &'static str) -> String {
     let key = match key.split("::").last() {
         Some(key) => key,
         None => {
             warn!("I18n key '{}' is incorrect. Translation will fail.", key);
-            return Ok(key.to_owned());
+            return key.to_owned();
         }
     };
     let mut components = key.split('.');
@@ -18,7 +81,10 @@ pub async fn trans(path: impl AsRef<Path>, key: &str, lang: &'static str) -> io:
         components.next().unwrap_or_default()
     );
 
-    let content = fs::read_to_string(&path).await?;
+    let content = match fs::read_to_string(&path).await {
+        Ok(content) => content,
+        Err(_) => return key.to_owned(),
+    };
     let text = extract(&content, components)
         .unwrap_or_else(|_| {
             warn!("Failed to parse YAML file: {}", path);
@@ -29,7 +95,7 @@ pub async fn trans(path: impl AsRef<Path>, key: &str, lang: &'static str) -> io:
             key.to_owned()
         });
 
-    Ok(text)
+    text
 }
 
 fn extract<'a>(
