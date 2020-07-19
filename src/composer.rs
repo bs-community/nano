@@ -120,9 +120,9 @@ pub async fn dedupe<'a>(
     Ok(())
 }
 
-pub async fn install_php_dependencies(
+pub async fn install_php_dependencies<S: AsRef<str>>(
     path: impl AsRef<Path>,
-    plugins: impl Iterator<Item = (&str, &str)>,
+    plugins: impl Iterator<Item = (S, S)>,
 ) -> Result<()> {
     let bs_lock = parse_lock(&path).await?;
 
@@ -130,10 +130,10 @@ pub async fn install_php_dependencies(
 
     let jobs = plugins
         .map(|(name, _)| {
-            info!("Installing dependencies for plugin '{}'...", name);
+            info!("Installing dependencies for plugin '{}'...", name.as_ref());
             install_and_clean(
                 &bs_lock,
-                format!("{}/plugins/{}", path.as_ref().display(), name),
+                format!("{}/plugins/{}", path.as_ref().display(), name.as_ref()),
             )
         })
         .collect::<Vec<_>>();
