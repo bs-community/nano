@@ -20,7 +20,7 @@ pub struct Package {
     title: String,
     description: String,
     author: String,
-    require: HashMap<String, String>,
+    require: BTreeMap<String, String>,
     dist: Dist,
 }
 

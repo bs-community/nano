@@ -1,5 +1,5 @@
 use serde::Deserialize;
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 
 #[derive(Deserialize)]
 pub struct PackageJson {
@@ -8,5 +8,5 @@ pub struct PackageJson {
     pub title: String,
     pub description: String,
     pub author: String,
-    pub require: HashMap<String, String>,
+    pub require: BTreeMap<String, String>,
 }
