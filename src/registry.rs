@@ -66,15 +66,16 @@ async fn read_registry(path: impl AsRef<Path>) -> Result<BTreeMap<String, Packag
     Ok(to_map(registry.packages))
 }
 
-async fn update_registry<'a, S>(
+async fn update_registry<'a, S1, S2>(
     packages: &'a mut BTreeMap<String, Package>,
-    plugins_dir: impl AsRef<str>,
-    updated: impl Iterator<Item = (S, S)>,
+    plugins_dir: S1,
+    updated: impl Iterator<Item = (S2, S2)>,
     lang: &'static str,
     i18n_store: &'a I18nStore,
 ) -> Result<()>
 where
-    S: AsRef<str>,
+    S1: AsRef<str>,
+    S2: AsRef<str>,
 {
     for (name, version) in updated {
         let name = name.as_ref();
@@ -144,8 +145,8 @@ async fn write_registry(path: impl AsRef<Path>, packages: BTreeMap<String, Packa
 
 pub async fn operate_registry<S: AsRef<str>>(
     path: S,
-    plugins_dir: impl AsRef<str>,
-    updated: &HashMap<&str, &str>,
+    plugins_dir: S,
+    updated: &HashMap<String, String>,
     i18n_store: &I18nStore,
 ) -> Result<()> {
     for lang in &["en", "zh_CN"] {

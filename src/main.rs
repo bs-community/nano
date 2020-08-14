@@ -1,5 +1,5 @@
-use futures::future::join3;
-use nano::{build::build, composer::install_php_dependencies, i18n::I18nStore};
+use futures::try_join;
+use nano::{build::build, composer::install_php_dependencies, i18n::I18nStore, registry};
 use serde::Serialize;
 use std::env;
 use tokio::fs;
@@ -20,6 +20,8 @@ async fn main() -> anyhow::Result<()> {
 
     let path = env::var("PLUGINS_DIR").unwrap_or_else(|_| String::from("."));
 
+    registry::clone().await?;
+
     let (_, plugins) = nano::analyzer::analyze(&path)?;
     if plugins.is_empty() {
         return Ok(());
@@ -27,18 +29,17 @@ async fn main() -> anyhow::Result<()> {
 
     let i18n_store = I18nStore::create(&path, plugins.keys()).await;
 
-    let (build, composer, _) = join3(
+    try_join!(
         build(&path, plugins.iter()),
         install_php_dependencies(&path, plugins.iter()),
-        save_updated(
-            plugins.iter().map(|(k, v)| (k.as_str(), v.as_str())),
-            &i18n_store,
-        ),
+        registry::operate_registry(".dist/registry_{lang}.json", &path, &plugins, &i18n_store)
+    )?;
+
+    save_updated(
+        plugins.iter().map(|(k, v)| (k.as_str(), v.as_str())),
+        &i18n_store,
     )
     .await;
-
-    build?;
-    composer?;
 
     Ok(())
 }
