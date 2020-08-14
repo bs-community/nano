@@ -43,12 +43,12 @@ async fn webpack() -> Result<()> {
     Ok(())
 }
 
-async fn remove_ts_files(path: impl AsRef<Path>) -> Result<()> {
+async fn remove_source_files(path: impl AsRef<Path>) -> Result<()> {
     let mut items = fs::read_dir(&path).await?;
     while let Some(item) = items.next_entry().await? {
         let path = item.path();
         let file_type = item.file_type().await?;
-        if file_type.is_file() && path.extension().map(|ext| ext == "ts").unwrap_or(false) {
+        if file_type.is_file() && path.extension().map(is_source_file).unwrap_or(false) {
             fs::remove_file(path).await?;
         }
     }
@@ -56,14 +56,18 @@ async fn remove_ts_files(path: impl AsRef<Path>) -> Result<()> {
     Ok(())
 }
 
+fn is_source_file(ext: &std::ffi::OsStr) -> bool {
+    ext == "ts" || ext == "tsx" || ext == "scss"
+}
+
 pub async fn clean_up(path: impl AsRef<Path>) -> Result<()> {
     let path = path.as_ref().display();
 
     let node_modules = fs::remove_dir_all(format!("{}/node_modules", path));
     let git_ignore = fs::remove_file(format!("{}/.gitignore", path));
-    let ts_files = remove_ts_files(format!("{}/assets", path));
+    let source_files = remove_source_files(format!("{}/assets", path));
 
-    try_join3(node_modules, git_ignore, ts_files)
+    try_join3(node_modules, git_ignore, source_files)
         .await
         .map(|_| ())
 }
