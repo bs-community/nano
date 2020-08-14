@@ -1,5 +1,7 @@
 use futures::try_join;
-use nano::{build::build, composer::install_php_dependencies, i18n::I18nStore, registry};
+use nano::{
+    build::build, composer::install_php_dependencies, i18n::I18nStore, registry, zip::create_zip,
+};
 use serde::Serialize;
 use std::env;
 use tokio::fs;
@@ -34,6 +36,13 @@ async fn main() -> anyhow::Result<()> {
         install_php_dependencies(&path, plugins.iter()),
         registry::operate_registry(".dist/registry_{lang}.json", &path, &plugins, &i18n_store)
     )?;
+
+    for (name, version) in &plugins {
+        create_zip(
+            format!("{}/plugins/{}", path, name),
+            format!(".dist/{}_{}.zip", name, version),
+        )?;
+    }
 
     save_updated(
         plugins.iter().map(|(k, v)| (k.as_str(), v.as_str())),
