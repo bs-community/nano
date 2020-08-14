@@ -138,7 +138,7 @@ async fn write_registry(path: impl AsRef<Path>, packages: BTreeMap<String, Packa
         version: 1,
         packages: to_list(packages),
     };
-    let json = serde_json::to_vec(&registry).expect("Failed to serialize registry to JSON.");
+    let json = serde_json::to_vec_pretty(&registry).expect("Failed to serialize registry to JSON.");
 
     fs::write(path, &json).await
 }
