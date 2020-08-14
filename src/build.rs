@@ -5,10 +5,10 @@ use std::{
 };
 use tokio::{fs, io::Result, process::Command};
 
-async fn yarn() -> Result<()> {
+async fn yarn(root: impl AsRef<Path>) -> Result<()> {
     info!("Running Yarn to install dependencies...");
 
-    let output = Command::new("yarn").output().await?;
+    let output = Command::new("yarn").current_dir(root).output().await?;
     let status = output.status;
     if !status.success() {
         let code = status.code().unwrap_or(-1);
@@ -22,11 +22,12 @@ async fn yarn() -> Result<()> {
     Ok(())
 }
 
-async fn webpack() -> Result<()> {
+async fn webpack(root: impl AsRef<Path>) -> Result<()> {
     info!("Running webpack...");
 
     let output = Command::new("yarn")
         .arg("build")
+        .current_dir(root)
         .env("NODE_ENV", "production")
         .output()
         .await?;
@@ -76,8 +77,8 @@ pub async fn build<S: AsRef<str>>(
     root: impl AsRef<Path>,
     plugins: impl Iterator<Item = (S, S)>,
 ) -> Result<()> {
-    yarn().await?;
-    webpack().await?;
+    yarn(&root).await?;
+    webpack(&root).await?;
 
     let root = root.as_ref();
 
