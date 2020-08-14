@@ -27,7 +27,7 @@ async fn clean_up() -> Result<()> {
     let ts = format!("{}/file.ts", assets);
     try_join(fs::write(&js, b""), fs::write(&ts, b"")).await?;
 
-    nano::build::clean_up(&path).await?;
+    nano::build::clean_up(&path).await;
 
     assert_eq!(
         fs::File::open(&node_modules).await.unwrap_err().kind(),

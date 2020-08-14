@@ -1,4 +1,4 @@
-use futures::future::{join_all, try_join3};
+use futures::future::join_all;
 use std::{
     io::{Error, ErrorKind},
     path::Path,
@@ -61,16 +61,29 @@ fn is_source_file(ext: &std::ffi::OsStr) -> bool {
     ext == "ts" || ext == "tsx" || ext == "scss"
 }
 
-pub async fn clean_up(path: impl AsRef<Path>) -> Result<()> {
+pub async fn clean_up(path: impl AsRef<Path>) {
     let path = path.as_ref().display();
 
-    let node_modules = fs::remove_dir_all(format!("{}/node_modules", path));
-    let git_ignore = fs::remove_file(format!("{}/.gitignore", path));
-    let source_files = remove_source_files(format!("{}/assets", path));
+    let node_modules = format!("{}/node_modules", path);
+    if let Ok(_) = fs::File::open(&node_modules).await {
+        if let Err(_) = fs::remove_dir_all(&node_modules).await {
+            warn!("Failed to clean 'node_modules' directory at '{}'.", path);
+        }
+    }
 
-    try_join3(node_modules, git_ignore, source_files)
-        .await
-        .map(|_| ())
+    let git_ignore = format!("{}/.gitignore", path);
+    if let Ok(_) = fs::File::open(&git_ignore).await {
+        if let Err(_) = fs::remove_file(&git_ignore).await {
+            warn!("Failed to delete '.gitignore' file at '{}'.", path);
+        }
+    }
+
+    let source_files = format!("{}/assets", path);
+    if let Ok(_) = fs::File::open(&source_files).await {
+        if let Err(_) = remove_source_files(&source_files).await {
+            warn!("Failed to clean source files at '{}'.", path);
+        }
+    }
 }
 
 pub async fn build<S: AsRef<str>>(
@@ -86,11 +99,7 @@ pub async fn build<S: AsRef<str>>(
         let name = name.as_ref();
         info!("Cleaning up for plugin '{}'...", name);
         let path = format!("{}/plugins/{}", root.display(), name);
-        async move {
-            if let Err(_) = clean_up(&path).await {
-                warn!("Failed to clean up files at '{}'", path);
-            }
-        }
+        async move { clean_up(&path).await }
     });
     join_all(cleans.collect::<Vec<_>>()).await;
 
