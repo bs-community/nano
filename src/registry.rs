@@ -54,6 +54,11 @@ fn to_list(map: BTreeMap<String, Package>) -> Vec<Package> {
 }
 
 async fn read_registry(path: impl AsRef<Path>) -> Result<BTreeMap<String, Package>> {
+    info!(
+        "Reading registry data from '{}'...",
+        path.as_ref().display()
+    );
+
     let json = fs::read_to_string(path).await?;
     let registry = serde_json::from_str::<Registry>(&json)
         .map_err(|e| {
@@ -77,6 +82,8 @@ where
     S1: AsRef<str>,
     S2: AsRef<str>,
 {
+    info!("Updating registry data for language '{}'...", lang);
+
     for (name, version) in updated {
         let name = name.as_ref();
         let version = version.as_ref();
@@ -134,6 +141,8 @@ where
 }
 
 async fn write_registry(path: impl AsRef<Path>, packages: BTreeMap<String, Package>) -> Result<()> {
+    info!("Saving registry data to '{}'...", path.as_ref().display());
+
     let registry = Registry {
         version: 1,
         packages: to_list(packages),
