@@ -16,6 +16,6 @@ jobs:
       - name: Release
         uses: softprops/action-gh-release@v1
         with:
-          files: target/release/bot
+          files: target/release/nano
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
