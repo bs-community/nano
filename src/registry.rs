@@ -1,5 +1,6 @@
 use crate::{i18n::I18nStore, types::PackageJson};
 use serde::{Deserialize, Serialize};
+use sha2::{Digest, Sha256};
 use std::{
     collections::{BTreeMap, HashMap},
     path::Path,
@@ -70,6 +71,7 @@ async fn update_registry<'a, S1, S2>(
     packages: &'a mut BTreeMap<String, Package>,
     plugins_dir: S1,
     updated: impl Iterator<Item = (S2, S2)>,
+    hashes: &'a HashMap<&'a str, String>,
     lang: &'static str,
     i18n_store: &'a I18nStore,
 ) -> Result<()>
@@ -124,7 +126,7 @@ where
                         "https://cdn.jsdelivr.net/gh/bs-community/plugins-dist/{}_{}.zip",
                         name, version
                     ),
-                    shasum: String::from("<hash>"),
+                    shasum: hashes.get(name).map(|s| s.to_owned()).unwrap_or_default(),
                 },
             },
         );
@@ -143,19 +145,42 @@ async fn write_registry(path: impl AsRef<Path>, packages: BTreeMap<String, Packa
     fs::write(path, &json).await
 }
 
+fn calculate_hashes<'a>(
+    path: &'a str,
+    updated_plugins: &'a HashMap<String, String>,
+) -> HashMap<&'a str, String> {
+    info!("Calculating SHA512 hash of zip files...");
+
+    updated_plugins
+        .iter()
+        .map(|(name, version)| -> std::io::Result<_> {
+            let mut file = std::fs::File::open(format!("{}/{}_{}.zip", path, name, version))?;
+            let mut hasher = Sha256::new();
+            std::io::copy(&mut file, &mut hasher)?;
+
+            let hash = hasher.finalize();
+            Ok((name.as_str(), format!("{:x}", hash)))
+        })
+        .filter_map(|s| s.ok())
+        .collect()
+}
+
 pub async fn operate_registry<S: AsRef<str>>(
-    path: S,
+    path: &str,
     plugins_dir: S,
     updated: &HashMap<String, String>,
     i18n_store: &I18nStore,
 ) -> Result<()> {
+    let hashes = calculate_hashes(&path, &updated);
+
     for lang in &["en", "zh_CN"] {
-        let path = path.as_ref().replace("{lang}", lang);
+        let path = format!("{}/registry_{}.json", path, lang);
         let mut packages = read_registry(&path).await?;
         update_registry(
             &mut packages,
             &plugins_dir,
             updated.iter(),
+            &hashes,
             lang,
             &i18n_store,
         )

@@ -36,7 +36,6 @@ async fn main() -> anyhow::Result<()> {
     try_join!(
         build(&path, plugins.iter()),
         install_php_dependencies(&path, plugins.iter()),
-        registry::operate_registry(".dist/registry_{lang}.json", &path, &plugins, &i18n_store)
     )?;
 
     for (name, version) in &plugins {
@@ -45,6 +44,8 @@ async fn main() -> anyhow::Result<()> {
             format!(".dist/{}_{}.zip", name, version),
         )?;
     }
+
+    registry::operate_registry(".dist", &path, &plugins, &i18n_store).await?;
 
     save_updated(
         plugins.iter().map(|(k, v)| (k.as_str(), v.as_str())),
