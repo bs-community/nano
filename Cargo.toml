@@ -1,6 +1,6 @@
 [package]
 name = "nano"
-version = "0.1.1"
+version = "0.1.2"
 authors = ["Pig Fang <g-plane@hotmail.com>"]
 edition = "2018"
 
