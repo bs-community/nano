@@ -147,7 +147,7 @@ fn calculate_hashes<'a>(
     path: &'a str,
     updated_plugins: &'a HashMap<String, String>,
 ) -> HashMap<&'a str, String> {
-    info!("Calculating SHA512 hash of zip files...");
+    info!("Calculating SHA256 hash of zip files...");
 
     updated_plugins
         .iter()
