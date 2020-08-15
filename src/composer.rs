@@ -113,7 +113,7 @@ pub async fn dedupe<'a>(
         fs::remove_file(manifest_path),
         fs::remove_file(format!("{}/composer.lock", display)),
     );
-    if let Err(_) = clean_up.await {
+    if clean_up.await.is_err() {
         warn!("Failed to clean up Composer stuff at '{}'", display);
     }
 

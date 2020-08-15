@@ -65,24 +65,22 @@ pub async fn clean_up(path: impl AsRef<Path>) {
     let path = path.as_ref().display();
 
     let node_modules = format!("{}/node_modules", path);
-    if let Ok(_) = fs::File::open(&node_modules).await {
-        if let Err(_) = fs::remove_dir_all(&node_modules).await {
-            warn!("Failed to clean 'node_modules' directory at '{}'.", path);
-        }
+    if fs::File::open(&node_modules).await.is_ok()
+        && fs::remove_dir_all(&node_modules).await.is_err()
+    {
+        warn!("Failed to clean 'node_modules' directory at '{}'.", path);
     }
 
     let git_ignore = format!("{}/.gitignore", path);
-    if let Ok(_) = fs::File::open(&git_ignore).await {
-        if let Err(_) = fs::remove_file(&git_ignore).await {
-            warn!("Failed to delete '.gitignore' file at '{}'.", path);
-        }
+    if fs::File::open(&git_ignore).await.is_ok() && fs::remove_file(&git_ignore).await.is_err() {
+        warn!("Failed to delete '.gitignore' file at '{}'.", path);
     }
 
     let source_files = format!("{}/assets", path);
-    if let Ok(_) = fs::File::open(&source_files).await {
-        if let Err(_) = remove_source_files(&source_files).await {
-            warn!("Failed to clean source files at '{}'.", path);
-        }
+    if fs::File::open(&source_files).await.is_ok()
+        && remove_source_files(&source_files).await.is_err()
+    {
+        warn!("Failed to clean source files at '{}'.", path);
     }
 }
 

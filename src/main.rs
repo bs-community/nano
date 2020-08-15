@@ -64,7 +64,7 @@ async fn save_updated(plugins: impl Iterator<Item = (&str, &str)>, i18n_store: &
         })
         .collect::<Vec<_>>();
     if let Ok(bytes) = serde_json::to_vec(&updated) {
-        if let Err(_) = fs::write("updated.json", &bytes).await {
+        if fs::write("updated.json", &bytes).await.is_err() {
             warn!("Failed to save updated plugins list.");
         }
     }
