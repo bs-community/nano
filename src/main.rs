@@ -22,7 +22,9 @@ async fn main() -> anyhow::Result<()> {
 
     let path = env::var("PLUGINS_DIR").unwrap_or_else(|_| String::from("."));
 
-    registry::clone().await?;
+    if fs::File::open(".dist").await.is_err() {
+        registry::clone().await?;
+    }
 
     let (_, plugins) = nano::analyzer::analyze(&path)?;
     if plugins.is_empty() {
