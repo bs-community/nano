@@ -29,9 +29,9 @@ pub async fn parse_lock(path: impl AsRef<Path>) -> Result<ComposerPackages> {
 
     let json = fs::read(&path).await?;
     let lock = from_slice::<ComposerLock>(&json)
-        .or_else(|e| {
+        .map_err(|e| {
             error!("Failed to parse composer.lock ({}).", path);
-            Err(e)
+            e
         })
         .unwrap();
 
@@ -82,10 +82,10 @@ async fn install_and_clean(lock: &ComposerPackages, path: impl AsRef<Path>) -> R
     dedupe(&lock, &path, &path_display, &composer_json).await
 }
 
-pub async fn dedupe<'a>(
+pub async fn dedupe(
     lock: &ComposerPackages,
     path: impl AsRef<Path>,
-    display: &path::Display<'a>,
+    display: &path::Display<'_>,
     manifest_path: &str,
 ) -> Result<()> {
     let local_lock = parse_lock(&path).await?;

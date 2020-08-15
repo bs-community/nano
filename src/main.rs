@@ -63,7 +63,7 @@ async fn save_updated(plugins: impl Iterator<Item = (&str, &str)>, i18n_store: &
                 .get(name.as_ref())
                 .map(|info| info.title.zh_cn.as_str())
                 .unwrap_or_default(),
-            version: version.as_ref(),
+            version,
         })
         .collect::<Vec<_>>();
     if let Ok(bytes) = serde_json::to_vec(&updated) {

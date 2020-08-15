@@ -20,6 +20,7 @@ pub struct Text {
 }
 
 impl I18nStore {
+    #[allow(clippy::eval_order_dependence)]
     pub async fn create<S: AsRef<str>>(
         root: impl AsRef<Path>,
         plugins: impl Iterator<Item = S>,
@@ -85,7 +86,8 @@ pub async fn trans(path: impl AsRef<Path>, key: &str, lang: &'static str) -> Str
         Ok(content) => content,
         Err(_) => return key.to_owned(),
     };
-    let text = extract(&content, components)
+
+    extract(&content, components)
         .unwrap_or_else(|_| {
             warn!("Failed to parse YAML file: {}", path);
             Some(key.to_owned())
@@ -93,9 +95,7 @@ pub async fn trans(path: impl AsRef<Path>, key: &str, lang: &'static str) -> Str
         .unwrap_or_else(|| {
             warn!("Cannot find translation of key '{}'.", key);
             key.to_owned()
-        });
-
-    text
+        })
 }
 
 fn extract<'a>(
