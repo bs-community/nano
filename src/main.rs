@@ -1,6 +1,7 @@
 use futures::try_join;
 use nano::{
-    build::build, composer::install_php_dependencies, i18n::I18nStore, registry, zip::create_zip,
+    analyzer, build::build, composer::install_php_dependencies, i18n::I18nStore, registry,
+    zip::create_zip,
 };
 use serde::Serialize;
 use std::env;
@@ -22,7 +23,8 @@ async fn main() -> anyhow::Result<()> {
 
     let path = env::var("PLUGINS_DIR").unwrap_or_else(|_| String::from("."));
 
-    let (_, plugins) = nano::analyzer::analyze(&path)?;
+    let (message, mut plugins) = analyzer::analyze(&path)?;
+    analyzer::analyze_commit_message(&message, &path, &mut plugins).await?;
     if plugins.is_empty() {
         return Ok(());
     }

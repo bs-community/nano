@@ -1,6 +1,8 @@
+use crate::types::PackageJson;
 use git2::{DiffDelta, DiffLine, DiffOptions, Repository};
 use regex::Regex;
 use std::{collections::HashMap, path::Path};
+use tokio::fs;
 
 pub fn analyze(
     repo_path: impl AsRef<Path>,
@@ -85,4 +87,25 @@ pub fn analyze(
     )?;
 
     Ok((commit_msg.to_owned(), map))
+}
+
+pub async fn analyze_commit_message(
+    message: &str,
+    root: impl AsRef<Path>,
+    plugins: &mut HashMap<String, String>,
+) -> anyhow::Result<()> {
+    let re_force_update = Regex::new(r"force update: ([\w-]+)").unwrap();
+    let plugin_name = re_force_update.captures(&message).and_then(|s| s.get(1));
+    if let Some(name) = plugin_name {
+        let package_json = fs::read_to_string(format!(
+            "{}/plugins/{}/package.json",
+            root.as_ref().display(),
+            name.as_str()
+        ))
+        .await?;
+        let info = serde_json::from_str::<PackageJson>(&package_json)?;
+        plugins.insert(name.as_str().to_owned(), info.version);
+    }
+
+    Ok(())
 }
