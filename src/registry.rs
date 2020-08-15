@@ -43,14 +43,12 @@ pub async fn clone() -> Result<Output> {
         .await
 }
 
-#[allow(dead_code)]
 fn to_map(list: Vec<Package>) -> BTreeMap<String, Package> {
     list.into_iter()
         .map(|package| (package.name.clone(), package))
         .collect()
 }
 
-#[allow(dead_code)]
 fn to_list(map: BTreeMap<String, Package>) -> Vec<Package> {
     map.into_iter().map(|(_, package)| package).collect()
 }
