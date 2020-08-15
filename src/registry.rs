@@ -4,9 +4,8 @@ use sha2::{Digest, Sha256};
 use std::{
     collections::{BTreeMap, HashMap},
     path::Path,
-    process::Output,
 };
-use tokio::{fs, io::Result, process::Command};
+use tokio::{fs, io::Result};
 
 #[derive(Serialize, Deserialize)]
 pub struct Registry {
@@ -30,17 +29,6 @@ struct Dist {
     r#type: String,
     url: String,
     shasum: String,
-}
-
-pub async fn clone() -> Result<Output> {
-    info!("Cloning registry repository into '.dist' directory...");
-    Command::new("git")
-        .arg("clone")
-        .arg("https://github.com/bs-community/plugins-dist.git")
-        .arg(".dist")
-        .arg("--depth=1")
-        .output()
-        .await
 }
 
 fn to_map(list: Vec<Package>) -> BTreeMap<String, Package> {
