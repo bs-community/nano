@@ -1,8 +1,10 @@
 use futures::future::{try_join3, try_join_all};
+use reqwest::ClientBuilder;
 use serde::Deserialize;
 use serde_json::from_slice;
 use std::{
     collections::HashSet,
+    env,
     io::{Error, ErrorKind},
     path::{self, Path},
 };
@@ -124,7 +126,13 @@ pub async fn install_php_dependencies<S: AsRef<str>>(
     path: impl AsRef<Path>,
     plugins: impl Iterator<Item = (S, S)>,
 ) -> Result<()> {
-    let bs_lock = parse_lock(&path).await?;
+    let bs_lock = fetch_bs_lock().await.unwrap_or_else(|e| {
+        warn!(
+            "Failed to fetch composer.lock of Blessing Skin Server: {}",
+            e
+        );
+        HashSet::default()
+    });
 
     info!("Starting to install PHP dependencies...");
 
@@ -142,4 +150,31 @@ pub async fn install_php_dependencies<S: AsRef<str>>(
     info!("Finished to install PHP dependencies.");
 
     Ok(())
+}
+
+async fn fetch_bs_lock() -> reqwest::Result<ComposerPackages> {
+    let mut request = ClientBuilder::new()
+        .user_agent("Rust reqwest/0.10")
+        .build()?
+        .get(
+            "https://raw.githubusercontent.com/bs-community/blessing-skin-server/dev/composer.lock",
+        );
+
+    if let Ok(token) = env::var("GITHUB_TOKEN") {
+        request = request.header("Authorization", format!("Bearer {}", token));
+    }
+
+    info!("Fetching composer.lock of Blessing Skin Server...");
+
+    request
+        .send()
+        .await?
+        .json::<ComposerLock>()
+        .await
+        .map(|lock| {
+            lock.packages
+                .into_iter()
+                .map(|package| package.name)
+                .collect()
+        })
 }
