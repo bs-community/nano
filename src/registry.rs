@@ -116,7 +116,7 @@ where
                 dist: Dist {
                     r#type: String::from("zip"),
                     url: format!(
-                        "https://gplane.coding.net/p/blessing-skin-plugins-dist/d/blessing-skin-plugins-dist/git/raw/master/{}_{}.zip",
+                        "https://git.qvq.network/bs-community/plugins-dist/-/raw/master/{}_{}.zip",
                         name, version
                     ),
                     shasum: hashes.get(name).map(|s| s.to_owned()).unwrap_or_default(),
