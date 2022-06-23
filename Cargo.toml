@@ -21,3 +21,10 @@ tokio = { version = "0.2", features = ["macros", "process", "fs", "stream"] }
 walkdir = "2.3"
 yaml-rust = "0.4"
 zip = "0.5"
+
+[profile.release]
+lto = true
+strip = true
+codegen-units = 1
+opt-level = "z"   
+panic = 'abort'
