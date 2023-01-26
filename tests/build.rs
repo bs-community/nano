@@ -10,7 +10,7 @@ async fn clean_up() -> Result<()> {
     match fs::remove_dir_all(&path).await {
         Ok(_) => {}
         Err(e) if e.kind() == ErrorKind::NotFound => {}
-        e => panic!(e),
+        e => panic!("{e:?}"),
     };
 
     let display = path.display();

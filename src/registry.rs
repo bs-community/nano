@@ -70,20 +70,19 @@ where
     S1: AsRef<str>,
     S2: AsRef<str>,
 {
-    info!("Updating registry data for language '{}'...", lang);
+    info!("Updating registry data for language '{lang}'...");
 
     for (name, version) in updated {
         let name = name.as_ref();
         let version = version.as_ref();
         let json = fs::read_to_string(format!(
-            "{}/plugins/{}/package.json",
+            "{}/plugins/{name}/package.json",
             plugins_dir.as_ref(),
-            name
         ))
         .await?;
         let package_json = serde_json::from_str::<PackageJson>(&json)
             .map_err(|e| {
-                error!("Failed to parse 'package.json` of plugin '{}'.", name);
+                error!("Failed to parse 'package.json` of plugin '{name}'.");
                 e
             })
             .expect("Failed to parse 'package.json' file.");
@@ -91,7 +90,7 @@ where
         let i18n = i18n_store
             .get(&name)
             .or_else(|| {
-                error!("Cannot retrieve i18n texts of plugin {}.", name);
+                error!("Cannot retrieve i18n texts of plugin {name}.");
                 None
             })
             .expect("Cannot retrieve i18n texts.");
@@ -116,8 +115,7 @@ where
                 dist: Dist {
                     r#type: String::from("zip"),
                     url: format!(
-                        "https://git.qvq.network/bs-community/plugins-dist/-/raw/master/{}_{}.zip",
-                        name, version
+                        "https://git.qvq.network/bs-community/plugins-dist/-/raw/master/{name}_{version}.zip",
                     ),
                     shasum: hashes.get(name).map(|s| s.to_owned()).unwrap_or_default(),
                 },
@@ -149,7 +147,7 @@ fn calculate_hashes<'a>(
     updated_plugins
         .iter()
         .map(|(name, version)| -> std::io::Result<_> {
-            let mut file = std::fs::File::open(format!("{}/{}_{}.zip", path, name, version))?;
+            let mut file = std::fs::File::open(format!("{path}/{name}_{version}.zip"))?;
             let mut hasher = Sha256::new();
             std::io::copy(&mut file, &mut hasher)?;
 
@@ -169,7 +167,7 @@ pub async fn operate_registry<S: AsRef<str>>(
     let hashes = calculate_hashes(&path, &updated);
 
     for lang in &["en", "zh_CN"] {
-        let path = format!("{}/registry_{}.json", path, lang);
+        let path = format!("{path}/registry_{lang}.json");
         let mut packages = read_registry(&path).await?;
         update_registry(
             &mut packages,

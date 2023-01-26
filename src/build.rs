@@ -16,7 +16,7 @@ async fn pnpm(root: impl AsRef<Path>) -> Result<()> {
             "Failed to run pnpm to install dependencies. Detail: {}",
             String::from_utf8_lossy(&output.stdout)
         );
-        return Err(Error::new(ErrorKind::Other, format!("exit code: {}", code)));
+        return Err(Error::new(ErrorKind::Other, format!("exit code: {code}")));
     }
 
     Ok(())
@@ -38,7 +38,7 @@ async fn webpack(root: impl AsRef<Path>) -> Result<()> {
             "Failed to run webpack. Detail: {}",
             String::from_utf8_lossy(&output.stdout)
         );
-        return Err(Error::new(ErrorKind::Other, format!("exit code: {}", code)));
+        return Err(Error::new(ErrorKind::Other, format!("exit code: {code}")));
     }
 
     Ok(())
@@ -49,7 +49,7 @@ async fn remove_source_files(path: impl AsRef<Path>) -> Result<()> {
     while let Some(item) = items.next_entry().await? {
         let path = item.path();
         let file_type = item.file_type().await?;
-        if file_type.is_file() && path.extension().map(is_source_file).unwrap_or(false) {
+        if file_type.is_file() && path.extension().map(is_source_file).unwrap_or_default() {
             fs::remove_file(path).await?;
         }
     }
@@ -64,23 +64,23 @@ fn is_source_file(ext: &std::ffi::OsStr) -> bool {
 pub async fn clean_up(path: impl AsRef<Path>) {
     let path = path.as_ref().display();
 
-    let node_modules = format!("{}/node_modules", path);
+    let node_modules = format!("{path}/node_modules");
     if fs::File::open(&node_modules).await.is_ok()
         && fs::remove_dir_all(&node_modules).await.is_err()
     {
-        warn!("Failed to clean 'node_modules' directory at '{}'.", path);
+        warn!("Failed to clean 'node_modules' directory at '{path}'.");
     }
 
-    let git_ignore = format!("{}/.gitignore", path);
+    let git_ignore = format!("{path}/.gitignore");
     if fs::File::open(&git_ignore).await.is_ok() && fs::remove_file(&git_ignore).await.is_err() {
-        warn!("Failed to delete '.gitignore' file at '{}'.", path);
+        warn!("Failed to delete '.gitignore' file at '{path}'.");
     }
 
-    let source_files = format!("{}/assets", path);
+    let source_files = format!("{path}/assets");
     if fs::File::open(&source_files).await.is_ok()
         && remove_source_files(&source_files).await.is_err()
     {
-        warn!("Failed to clean source files at '{}'.", path);
+        warn!("Failed to clean source files at '{path}'.");
     }
 }
 
@@ -95,8 +95,8 @@ pub async fn build<S: AsRef<str>>(
 
     let cleans = plugins.map(|(name, _)| {
         let name = name.as_ref();
-        info!("Cleaning up for plugin '{}'...", name);
-        let path = format!("{}/plugins/{}", root.display(), name);
+        info!("Cleaning up for plugin '{name}'...");
+        let path = format!("{}/plugins/{name}", root.display());
         async move { clean_up(&path).await }
     });
     join_all(cleans.collect::<Vec<_>>()).await;

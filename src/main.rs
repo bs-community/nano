@@ -38,8 +38,8 @@ async fn main() -> anyhow::Result<()> {
 
     for (name, version) in &plugins {
         create_zip(
-            format!("{}/plugins/{}", path, name),
-            format!(".dist/{}_{}.zip", name, version),
+            format!("{path}/plugins/{name}"),
+            format!(".dist/{name}_{version}.zip"),
         )?;
     }
 

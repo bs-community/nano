@@ -31,8 +31,8 @@ impl I18nStore {
 
         for plugin in plugins {
             let plugin = plugin.as_ref();
-            let path = format!("{}/plugins/{}", root, plugin);
-            let package_json = match fs::read(format!("{}/package.json", path)).await {
+            let path = format!("{root}/plugins/{plugin}");
+            let package_json = match fs::read(format!("{path}/package.json")).await {
                 Ok(bytes) => match serde_json::from_slice::<types::PackageJson>(&bytes) {
                     Ok(manifest) => manifest,
                     Err(_) => {
@@ -70,15 +70,14 @@ pub async fn trans(path: impl AsRef<Path>, key: &str, lang: &'static str) -> Str
     let key = match key.split("::").last() {
         Some(key) => key,
         None => {
-            warn!("I18n key '{}' is incorrect. Translation will fail.", key);
+            warn!("I18n key '{key}' is incorrect. Translation will fail.");
             return key.to_owned();
         }
     };
     let mut components = key.split('.');
     let path = format!(
-        "{}/lang/{}/{}.yml",
+        "{}/lang/{lang}/{}.yml",
         path.as_ref().display(),
-        lang,
         components.next().unwrap_or_default()
     );
 
@@ -89,11 +88,11 @@ pub async fn trans(path: impl AsRef<Path>, key: &str, lang: &'static str) -> Str
 
     extract(&content, components)
         .unwrap_or_else(|_| {
-            warn!("Failed to parse YAML file: {}", path);
+            warn!("Failed to parse YAML file: {path}");
             Some(key.to_owned())
         })
         .unwrap_or_else(|| {
-            warn!("Cannot find translation of key '{}'.", key);
+            warn!("Cannot find translation of key '{key}'.");
             key.to_owned()
         })
 }

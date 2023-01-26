@@ -23,7 +23,7 @@ async fn run_composer() -> Result<()> {
     match fs::remove_dir_all(&path).await {
         Ok(_) => {}
         Err(e) if e.kind() == ErrorKind::NotFound => {}
-        e => panic!(e),
+        e => panic!("{e:?}"),
     };
 
     fs::create_dir(&path).await?;
@@ -41,7 +41,7 @@ async fn dedupe() -> Result<()> {
     match fs::remove_dir_all(&path).await {
         Ok(_) => {}
         Err(e) if e.kind() == ErrorKind::NotFound => {}
-        e => panic!(e),
+        e => panic!("{e:?}"),
     };
 
     fs::create_dir(&path).await?;

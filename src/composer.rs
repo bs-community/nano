@@ -93,7 +93,7 @@ pub async fn dedupe(
     manifest_path: &str,
 ) -> Result<()> {
     let local_lock = parse_lock(&path).await?;
-    let vendor_path = format!("{}/vendor", display);
+    let vendor_path = format!("{display}/vendor");
 
     let deletion = async {
         let deletions = lock
@@ -117,10 +117,10 @@ pub async fn dedupe(
     let clean_up = try_join3(
         deletion,
         fs::remove_file(manifest_path),
-        fs::remove_file(format!("{}/composer.lock", display)),
+        fs::remove_file(format!("{display}/composer.lock")),
     );
     if clean_up.await.is_err() {
-        warn!("Failed to clean up Composer stuff at '{}'", display);
+        warn!("Failed to clean up Composer stuff at '{display}'");
     }
 
     Ok(())
@@ -131,10 +131,7 @@ pub async fn install_php_dependencies<S: AsRef<str>>(
     plugins: impl Iterator<Item = (S, S)>,
 ) -> Result<()> {
     let bs_lock = fetch_bs_lock().await.unwrap_or_else(|e| {
-        warn!(
-            "Failed to fetch composer.lock of Blessing Skin Server: {}",
-            e
-        );
+        warn!("Failed to fetch composer.lock of Blessing Skin Server: {e:?}");
         HashSet::default()
     });
 
@@ -158,14 +155,14 @@ pub async fn install_php_dependencies<S: AsRef<str>>(
 
 async fn fetch_bs_lock() -> reqwest::Result<ComposerPackages> {
     let mut request = ClientBuilder::new()
-        .user_agent("Rust reqwest/0.10")
+        .user_agent("Rust reqwest/0.11")
         .build()?
         .get(
             "https://raw.githubusercontent.com/bs-community/blessing-skin-server/dev/composer.lock",
         );
 
     if let Ok(token) = env::var("GITHUB_TOKEN") {
-        request = request.header("Authorization", format!("Bearer {}", token));
+        request = request.header("Authorization", format!("Bearer {token}"));
     }
 
     info!("Fetching composer.lock of Blessing Skin Server...");

@@ -77,7 +77,7 @@ async fn init_repo(path: impl AsRef<Path>) -> Result<Repository, Error> {
     match fs::remove_dir_all(&path).await {
         Ok(_) => {}
         Err(e) if e.kind() == ErrorKind::NotFound => {}
-        e => panic!(e),
+        e => panic!("{e:?}"),
     };
 
     Repository::init(&path)
