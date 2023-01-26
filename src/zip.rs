@@ -25,11 +25,11 @@ pub fn create_zip<P: AsRef<Path>>(dir: P, dest: P) -> anyhow::Result<()> {
         })?)?;
 
         if path.is_file() {
-            zip.start_file_from_path(name, options)?;
+            zip.start_file(name.to_string_lossy(), options)?;
             let mut f = File::open(path)?;
             io::copy(&mut f, &mut zip)?;
         } else if !name.as_os_str().is_empty() {
-            zip.add_directory_from_path(name, options)?;
+            zip.add_directory(name.to_string_lossy(), options)?;
         }
     }
 

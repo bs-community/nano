@@ -1,4 +1,7 @@
-use futures::future::{try_join3, try_join_all};
+use futures::{
+    future::{try_join3, try_join_all},
+    stream::StreamExt,
+};
 use reqwest::ClientBuilder;
 use serde::Deserialize;
 use serde_json::from_slice;
@@ -8,7 +11,8 @@ use std::{
     io::{Error, ErrorKind},
     path::{self, Path},
 };
-use tokio::{fs, io::Result, process::Command, stream::StreamExt};
+use tokio::{fs, io::Result, process::Command};
+use tokio_stream::wrappers::ReadDirStream;
 
 #[derive(Deserialize)]
 struct ComposerLock {
@@ -101,8 +105,8 @@ pub async fn dedupe(
         let mut dirs = fs::read_dir(&vendor_path).await?;
         while let Some(dir) = dirs.next_entry().await? {
             let path = dir.path();
-            let mut items = fs::read_dir(&path).await?;
-            if !items.any(|_| true).await {
+            let items = ReadDirStream::new(fs::read_dir(&path).await?);
+            if items.count().await == 0 {
                 fs::remove_dir(&path).await?;
             }
         }
