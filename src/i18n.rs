@@ -20,7 +20,6 @@ pub struct Text {
 }
 
 impl I18nStore {
-    #[allow(clippy::eval_order_dependence)]
     pub async fn create<S: AsRef<str>>(
         root: impl AsRef<Path>,
         plugins: impl Iterator<Item = S>,

@@ -14,10 +14,7 @@ pub fn analyze(
     let repo = Repository::open(repo_path)?;
 
     let head = repo.head()?.peel_to_commit()?;
-    let commit_msg = head
-        .message()
-        .unwrap_or_else(|| "(No commit message.)")
-        .trim();
+    let commit_msg = head.message().unwrap_or("(No commit message.)").trim();
     info!("Head commit is {}: {commit_msg}", head.id());
 
     let mut opts = DiffOptions::new();
@@ -95,7 +92,7 @@ pub async fn analyze_commit_message(
     plugins: &mut HashMap<String, String>,
 ) -> anyhow::Result<()> {
     let re_force_update = Regex::new(r"force update: ([\w-]+)").unwrap();
-    let plugin_name = re_force_update.captures(&message).and_then(|s| s.get(1));
+    let plugin_name = re_force_update.captures(message).and_then(|s| s.get(1));
     if let Some(name) = plugin_name {
         let package_json = fs::read_to_string(format!(
             "{}/plugins/{}/package.json",

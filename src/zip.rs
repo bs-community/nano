@@ -17,7 +17,7 @@ pub fn create_zip<P: AsRef<Path>>(dir: P, dest: P) -> anyhow::Result<()> {
     for entry in walk {
         let entry = entry?;
         let path = entry.path();
-        let name = path.strip_prefix(&dir.as_ref().parent().ok_or_else(|| {
+        let name = path.strip_prefix(dir.as_ref().parent().ok_or_else(|| {
             anyhow::Error::msg(format!(
                 "Cannot find parent directory of '{}'.",
                 dir.as_ref().display()

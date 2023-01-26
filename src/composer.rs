@@ -83,7 +83,7 @@ async fn install_and_clean(lock: &ComposerPackages, path: impl AsRef<Path>) -> R
 
     run_composer(&path).await?;
 
-    dedupe(&lock, &path, &path_display, &composer_json).await
+    dedupe(lock, &path, &path_display, &composer_json).await
 }
 
 pub async fn dedupe(

@@ -88,7 +88,7 @@ where
             .expect("Failed to parse 'package.json' file.");
 
         let i18n = i18n_store
-            .get(&name)
+            .get(name)
             .or_else(|| {
                 error!("Cannot retrieve i18n texts of plugin {name}.");
                 None
@@ -164,7 +164,7 @@ pub async fn operate_registry<S: AsRef<str>>(
     updated: &HashMap<String, String>,
     i18n_store: &I18nStore,
 ) -> Result<()> {
-    let hashes = calculate_hashes(&path, &updated);
+    let hashes = calculate_hashes(path, updated);
 
     for lang in &["en", "zh_CN"] {
         let path = format!("{path}/registry_{lang}.json");
@@ -175,7 +175,7 @@ pub async fn operate_registry<S: AsRef<str>>(
             updated.iter(),
             &hashes,
             lang,
-            &i18n_store,
+            i18n_store,
         )
         .await?;
         write_registry(&path, packages).await?;
