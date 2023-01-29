@@ -8,7 +8,11 @@ use tokio::{fs, io::Result, process::Command};
 async fn pnpm(root: impl AsRef<Path>) -> Result<()> {
     info!("Running pnpm to install dependencies...");
 
-    let output = Command::new("pnpm").current_dir(root).output().await?;
+    let output = Command::new("pnpm")
+        .arg("i")
+        .current_dir(root)
+        .output()
+        .await?;
     let status = output.status;
     if !status.success() {
         let code = status.code().unwrap_or(-1);
