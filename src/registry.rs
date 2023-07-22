@@ -115,7 +115,7 @@ where
                 dist: Dist {
                     r#type: String::from("zip"),
                     url: format!(
-                        "https://git.qvq.network/bs-community/plugins-dist/-/raw/master/{name}_{version}.zip",
+                        "https://d2jw1l0ullrzt6.cloudfront.net/{name}_{version}.zip",
                     ),
                     shasum: hashes.get(name).map(|s| s.to_owned()).unwrap_or_default(),
                 },
