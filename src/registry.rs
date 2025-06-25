@@ -115,7 +115,7 @@ where
                 dist: Dist {
                     r#type: String::from("zip"),
                     url: format!(
-                        "https://d2jw1l0ullrzt6.cloudfront.net/{name}_{version}.zip",
+                        "https://bs-plugins.littleservice.cn/{name}_{version}.zip",
                     ),
                     shasum: hashes.get(name).map(|s| s.to_owned()).unwrap_or_default(),
                 },
